@@ -1,0 +1,40 @@
+{
+  "name": "lawmsger",
+  "version": "1.0.0",
+  "description": "The internal commuication software for legal teams",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "build": {
+    "appId": "io.github.morkuo.lawmsger",
+    "copyright": "Copyright © 2022 Morton Kuo",
+    "productName": "Law Msger",
+    "directories": {
+      "output": "build"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/images/icon.png"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": "x64"
+        },
+        {
+          "target": "portable",
+          "arch": "x64"
+        }
+      ],
+      "icon": "icon.png'"
+    }
+  },
+  "author": "Morton Kuo",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^20.1.4",
+    "electron-builder": "^23.3.3"
+  }
+}

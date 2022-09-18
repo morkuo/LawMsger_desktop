@@ -1,0 +1,7 @@
+node_modules
+images
+.vscode
+.env
+.DS_Store
+.eslintrc.json
+build
