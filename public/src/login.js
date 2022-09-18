@@ -1,4 +1,4 @@
-import { addClass, storeToken, storeUserId } from './helper.js';
+import { addClass, storeToken, storeUserId, storeUsername, storeUserEmail } from './helper.js';
 
 setSignInField();
 
@@ -59,6 +59,8 @@ function setSignInField() {
 
     storeToken(response.data.access_token);
     storeUserId(response.data.user.id);
+    storeUsername(response.data.user.name);
+    storeUserEmail(response.data.user.email);
 
     window.location.href = `./main.html`;
   });
