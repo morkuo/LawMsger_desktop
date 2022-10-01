@@ -128,7 +128,7 @@ async function drawProfile(e) {
   changeProfileImageButton.setAttribute('id', 'changeProfileImageButton');
 
   const userId = localStorage.getItem('id');
-  pictureDiv.style.backgroundImage = `url(${FILE_HOST}/profile_picture/${userId}.jpg)`;
+  pictureDiv.style.backgroundImage = `url(${FILE_HOST}/profile_picture/${userId}.jpg?v=${Date.now()})`;
 
   addClass('profile', profileDiv, header, profile, namePTag, emailPTag);
 
