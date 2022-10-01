@@ -16,8 +16,6 @@ function createWindow() {
   return win;
 }
 
-app.commandLine.appendSwitch('ignore-certificate-errors');
-
 function createTray(win) {
   const image = nativeImage.createFromPath(join(__dirname, 'public/images/icon.png'));
 
@@ -31,6 +29,9 @@ function createTray(win) {
 
   return tray;
 }
+
+app.commandLine.appendSwitch('ignore-certificate-errors');
+app.commandLine.appendSwitch('disable-http-cache');
 
 app.whenReady().then(() => {
   const win = createWindow();
