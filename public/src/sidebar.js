@@ -6,6 +6,7 @@ import {
   fetchGet,
   checkSpecialCharacter,
   HOST,
+  FILE_HOST,
 } from './helper.js';
 import { socket } from './socket.js';
 import { addChatListenerToContactDivs, addGroupChatListenerToGroupDivs } from './chat.js';
@@ -206,7 +207,7 @@ function drawContactDivs(contacts, category) {
     addClass('contact-unread-count', unreadCountDiv);
 
     //get picture from s3
-    pictureDiv.style.backgroundImage = `url(${window.location.origin}/profile_picture/${contact.id}.jpg)`;
+    pictureDiv.style.backgroundImage = `url(${FILE_HOST}/profile_picture/${contact.id}.jpg)`;
     nameDiv.innerText = contact.name;
 
     if (contact.unread) {
@@ -690,14 +691,14 @@ function signOutButton() {
 
   signOutButton.addEventListener('click', () => {
     localStorage.removeItem('token');
-    window.location.href = `${window.location.origin}/index.html`;
+    window.location.href = `./index.html`;
   });
 }
 
 function drawFirmPicture() {
   const logoDiv = document.getElementById('firmLogo');
   const organizationId = localStorage.getItem('oid');
-  logoDiv.style.backgroundImage = `url(${window.location.origin}/firm_picture/${organizationId}.jpg)`;
+  logoDiv.style.backgroundImage = `url(${FILE_HOST}/firm_picture/${organizationId}.jpg)`;
 }
 
 export { drawContactDivs, drawSidebar, drawGroups, drawDeleteGroupButton };

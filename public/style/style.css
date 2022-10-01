@@ -175,7 +175,7 @@ p {
 
 #main::after {
   content: '';
-  background: url(/images/main.jpeg);
+  background: url(../images/main.jpeg);
   background-size: 42rem;
   background-repeat: no-repeat;
   background-position: center;

@@ -1,4 +1,5 @@
 const HOST = 'https://api.mortonkuo.solutions';
+const FILE_HOST = 'https://mortonkuo.solutions';
 // const HOST = 'http://localhost:3000';
 
 function setMsg(messages, error = false, autoRemove = true, appendTo = '#main') {
@@ -55,7 +56,7 @@ function storeUserData(userdata) {
 function getJwtToken() {
   let authorization = 'Bearer ';
   let tokenJson = localStorage.getItem('token');
-  if (!tokenJson) return (window.location.href = `${window.location.origin}/index.html`);
+  if (!tokenJson) return (window.location.href = `./index.html`);
 
   authorization += tokenJson;
 
@@ -157,13 +158,13 @@ async function setMessage(
   if (!senderSocketId) {
     //get signed in user's picture
     const userId = localStorage.getItem('id');
-    senderDiv.style.backgroundImage = `url(${window.location.origin}/profile_picture/${userId}.jpg)`;
+    senderDiv.style.backgroundImage = `url(${FILE_HOST}/profile_picture/${userId}.jpg)`;
 
     if (!more) messages.scrollTo(0, messages.scrollHeight);
     return;
   }
 
-  senderDiv.style.backgroundImage = `url(${window.location.origin}/profile_picture/${senderUserId}.jpg)`;
+  senderDiv.style.backgroundImage = `url(${FILE_HOST}/profile_picture/${senderUserId}.jpg)`;
   if (!more) messages.scrollTo(0, messages.scrollHeight);
   return;
 }
@@ -257,4 +258,5 @@ export {
   checkSpecialCharacter,
   loadingEffect,
   HOST,
+  FILE_HOST,
 };

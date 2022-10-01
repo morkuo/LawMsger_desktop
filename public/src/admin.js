@@ -1,4 +1,5 @@
-import { setMsg, addClass, getJwtToken } from './helper.js';
+import { HOST, setMsg, addClass, loadingEffect, getJwtToken } from './helper.js';
+import { socket } from './socket.js';
 
 function drawCreateUserForm() {
   const pane = document.querySelector('#pane');
@@ -37,8 +38,7 @@ function drawCreateUserForm() {
     button
   );
 
-  // eslint-disable-next-line no-undef
-  const signUpApi = `${envVar.host}/api/1.0/user`;
+  const signUpApi = `${HOST}/1.0/user`;
 
   button.addEventListener('click', async e => {
     e.preventDefault();
@@ -80,8 +80,7 @@ function drawCreateUserForm() {
 }
 
 async function checkAdmin() {
-  // eslint-disable-next-line no-undef
-  const profileApi = `${envVar.host}/api/1.0/user`;
+  const profileApi = `${HOST}/1.0/user`;
 
   let authorization = getJwtToken();
 
@@ -117,8 +116,7 @@ function drawDeleteUserForm() {
 
   addClass('admin', header, form, emailPTag, emailInput, button);
 
-  // eslint-disable-next-line no-undef
-  const signUpApi = `${envVar.host}/api/1.0/user`;
+  const signUpApi = `${HOST}/1.0/user`;
 
   button.addEventListener('click', async e => {
     e.preventDefault();
@@ -153,4 +151,123 @@ function drawDeleteUserForm() {
   form.appendChild(button);
 }
 
-export { drawCreateUserForm, drawDeleteUserForm, checkAdmin };
+function drawChangeFirmPictureForm() {
+  const pane = document.querySelector('#pane');
+  const manageDiv = pane.querySelector('div');
+
+  const changePictureDiv = document.createElement('form');
+  const firmPictureHeader = document.createElement('h3');
+  const previewDiv = document.createElement('div');
+  const pictureInputWrapper = document.createElement('label');
+  const pictureInputIcon = document.createElement('span');
+  const pictureInput = document.createElement('input');
+  const editDiv = document.createElement('div');
+  const confirmButton = document.createElement('span');
+
+  manageDiv.setAttribute('id', 'adminManageDiv');
+  changePictureDiv.setAttribute('id', 'firmPictureDiv');
+  previewDiv.setAttribute('id', 'firmPicturePreviewDiv');
+
+  pictureInput.setAttribute('id', 'pictureInput');
+  pictureInput.setAttribute('type', 'file');
+  pictureInput.setAttribute('accept', 'image/*');
+  confirmButton.setAttribute('id', 'firmPictureInputComfirm');
+  editDiv.setAttribute('class', 'editDiv');
+
+  pictureInputWrapper.setAttribute('id', 'pictureInputWrapper');
+  pictureInputIcon.setAttribute('id', 'firmPictureInputIcon');
+  pictureInputIcon.setAttribute('class', 'material-symbols-outlined');
+  confirmButton.setAttribute('class', 'material-symbols-outlined');
+
+  addClass('admin', changePictureDiv, confirmButton, firmPictureHeader, pictureInput);
+
+  firmPictureHeader.innerText = 'Edit Logo';
+  pictureInputIcon.innerText = 'add_photo_alternate';
+  confirmButton.innerText = 'check_box';
+
+  manageDiv.appendChild(changePictureDiv);
+
+  changePictureDiv.appendChild(firmPictureHeader);
+  changePictureDiv.appendChild(previewDiv);
+  changePictureDiv.appendChild(editDiv);
+
+  editDiv.appendChild(pictureInputWrapper);
+  editDiv.appendChild(confirmButton);
+
+  pictureInputWrapper.appendChild(pictureInput);
+  pictureInputWrapper.appendChild(pictureInputIcon);
+
+  pictureInput.addEventListener('change', previewFirmPicture);
+
+  confirmButton.addEventListener('click', uploadFirmPicture);
+}
+
+function previewFirmPicture() {
+  const pictureInput = document.getElementById('pictureInput');
+
+  const picture = pictureInput.files[0];
+  const reader = new FileReader();
+
+  if (picture) {
+    reader.readAsDataURL(picture);
+  }
+
+  reader.addEventListener(
+    'load',
+    () => {
+      const previewDiv = document.getElementById('firmPicturePreviewDiv');
+      previewDiv.style.backgroundImage = `url(${reader.result})`;
+    },
+    false
+  );
+}
+
+async function uploadFirmPicture(e) {
+  e.preventDefault();
+
+  const pictureInput = document.getElementById('pictureInput');
+
+  const authorization = getJwtToken();
+
+  const api = `${HOST}/1.0/firm/picture`;
+  const formData = new FormData();
+
+  formData.append('images', pictureInput.files[0]);
+
+  //let user know the request is sent
+  const loadingDiv = loadingEffect();
+
+  const res = await fetch(api, {
+    method: 'POST',
+    headers: {
+      'Authorization': authorization,
+    },
+    body: formData,
+  });
+
+  const response = await res.json();
+
+  //let user know the request is sent
+  loadingDiv.remove();
+
+  if (response.error) return setMsg(response.error, 'error');
+
+  //show updated user pfp for current user
+  const reader = new FileReader();
+  reader.readAsDataURL(pictureInput.files[0]);
+
+  reader.addEventListener('load', () => {
+    const pictureDiv = document.getElementById('firmLogo');
+    pictureDiv.style.backgroundImage = `url(${reader.result})`;
+  });
+
+  //show updated user pfp for other user
+  setTimeout(() => {
+    const firmId = localStorage.getItem('oid');
+    socket.emit('changeFirmPicture', firmId);
+  }, 2000);
+
+  setMsg(response.data);
+}
+
+export { drawCreateUserForm, drawDeleteUserForm, drawChangeFirmPictureForm, checkAdmin };

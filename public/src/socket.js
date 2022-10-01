@@ -1,11 +1,10 @@
-import { addClass, setMessage } from './helper.js';
+import { HOST, addClass, setMessage, setMsg, FILE_HOST } from './helper.js';
 import { drawContactDivs, drawSidebar, drawGroups, drawDeleteGroupButton } from './sidebar.js';
-// const { ipcRenderer } = envVar;
 
 let jwtToken = localStorage.getItem('token');
 
 // eslint-disable-next-line no-undef
-const socket = io(envVar.host, { query: { jwtToken } });
+const socket = io(HOST, { query: { jwtToken } });
 
 socket.on('connect', async () => {
   drawSidebar();
@@ -88,18 +87,22 @@ socket.on('clauses', suggestions => {
     row.appendChild(number);
     row.appendChild(body);
 
-    if (clauseBody.length > 50) {
+    if (clauseBody.length > 40) {
       title.innerText = clauseTitle;
       number.innerText = clauseNumber;
-      body.innerText = `${clauseBody.slice(0, 50)}...`;
+      body.innerText = `${clauseBody.slice(0, 40)}...`;
 
       row.setAttribute('data-body', clauseBody);
+      row.setAttribute('data-title', clauseTitle);
+      row.setAttribute('data-number', clauseNumber);
     } else {
       title.innerText = clauseTitle;
       number.innerText = clauseNumber;
       body.innerText = clauseBody;
 
       row.setAttribute('data-body', clauseBody);
+      row.setAttribute('data-title', clauseTitle);
+      row.setAttribute('data-number', clauseNumber);
     }
 
     table.appendChild(row);
@@ -132,10 +135,10 @@ socket.on('matchedClauses', suggestions => {
     row.appendChild(number);
     row.appendChild(body);
 
-    if (clauseBody.length > 50) {
+    if (clauseBody.length > 40) {
       title.innerText = clauseTitle;
       number.innerText = clauseNumber;
-      body.innerText = `${clauseBody.slice(0, 50)}...`;
+      body.innerText = `${clauseBody.slice(0, 40)}...`;
 
       row.setAttribute('data-body', clauseBody);
       row.setAttribute('data-title', clauseTitle);
@@ -195,10 +198,8 @@ socket.on(
         console.log('Incrementing!');
         const unreadCountDiv = div.querySelector('.contact-unread-count');
         unreadCountDiv.innerText++;
+        unreadCountDiv.classList.add('on');
       });
-
-      //send os notification
-      new Notification(`${fromUserName}`, { body: msg });
 
       return;
     }
@@ -216,8 +217,10 @@ socket.on(
       true
     );
 
+    // console.log(fromUserId);
+
     //append message from the sender to chat window
-    setMessage(msg, Date.now(), fromUserId, null, filesInfo, 'read', fromUserName);
+    setMessage(msg, Date.now(), fromUserId, null, filesInfo, 'read', fromUserName, fromUserId);
   }
 );
 
@@ -234,14 +237,11 @@ socket.on(
 
       // Unread
       const groupDiv = document.querySelector(`[data-socket-id="${groupId}"]`);
-      const groupNameDiv = groupDiv.querySelector('.group-name');
 
       console.log('Incrementing!');
       const unreadCountDiv = groupDiv.querySelector('.group-unread-count');
       unreadCountDiv.innerText++;
-
-      //send os notification
-      new Notification(`${groupNameDiv.innerText} - ${fromUserName}`, { body: msg });
+      unreadCountDiv.classList.add('on');
 
       return;
     }
@@ -252,15 +252,16 @@ socket.on(
     socket.emit('checkGroupChatWindow', userId, messageId);
 
     //append message from the sender to chat window
-    setMessage(msg, Date.now(), fromUserId, null, filesInfo, 'read', fromUserName);
+    setMessage(msg, Date.now(), fromUserId, null, filesInfo, 'read', fromUserName, fromUserId);
   }
 );
 
-socket.on('drawGroupDiv', (groupId, groupName, participants) => {
+socket.on('drawGroupDiv', (groupId, groupName, hostId, participants) => {
   const newGroup = [
     {
       id: groupId,
       name: groupName,
+      host: hostId,
       unread: 0,
     },
   ];
@@ -282,6 +283,9 @@ socket.on('drawGroupDiv', (groupId, groupName, participants) => {
 
 socket.on('deleteGroupDiv', groupId => {
   const groupDiv = document.querySelector(`[data-socket-id="${groupId}"]`);
+  const groupNameDiv = groupDiv.querySelector('.group-name');
+  const groupName = groupNameDiv.innerText;
+
   groupDiv.remove();
 
   const messages = document.getElementById('messages');
@@ -294,6 +298,8 @@ socket.on('deleteGroupDiv', groupId => {
 
   pane.innerHTML = '';
   pane.appendChild(welcome);
+
+  setMsg(`Group "${groupName}" was deleted by the host`);
 });
 
 socket.on('createStarContact', response => {
@@ -325,11 +331,13 @@ socket.on('createStarContact', response => {
 
   //add delete star button
   const contactDiv = document.querySelector(`#star div.contact[data-id="${targetContactUserId}"]`);
-  const deleteStarButton = document.createElement('div');
+  const deleteStarButton = document.createElement('span');
+
   deleteStarButton.setAttribute('class', 'contact-delete-star-button');
+  deleteStarButton.classList.add('material-symbols-outlined');
   contactDiv.appendChild(deleteStarButton);
 
-  deleteStarButton.innerText = '-';
+  deleteStarButton.innerText = 'person_remove';
 
   deleteStarButton.addEventListener('click', e => {
     socket.emit('deleteStarContact', targetContactUserId);
@@ -347,12 +355,13 @@ socket.on('deleteStarContact', response => {
 
   //append new star to star block
   const contactDiv = document.querySelector(`#all div.contact[data-id="${targetContactUserId}"]`);
-  const addStarButton = document.createElement('div');
+  const addStarButton = document.createElement('span');
 
   addStarButton.setAttribute('class', 'contact-add-star-button');
+  addStarButton.classList.add('material-symbols-outlined');
   contactDiv.appendChild(addStarButton);
 
-  addStarButton.innerText = '+';
+  addStarButton.innerText = 'star';
 
   addStarButton.addEventListener('click', e => {
     socket.emit('createStarContact', targetContactUserId);
@@ -423,6 +432,24 @@ socket.on('searchEamil', users => {
     suggestionsList.appendChild(suggestionLi);
     suggestionLi.appendChild(info);
   });
+});
+
+socket.on('changeProfilePicture', userId => {
+  const contactDivs = document.querySelectorAll(`.contact[data-id="${userId}"]`);
+
+  contactDivs.forEach(div => {
+    const pictureDiv = div.querySelector('.contact-picture');
+
+    //force the picture div to refresh the picture
+    pictureDiv.style.backgroundImage = `url(${FILE_HOST}/profile_picture/${userId}.jpg?v=${Date.now()})`;
+  });
+});
+
+socket.on('changeFirmPicture', firmId => {
+  const logoDiv = document.getElementById('firmLogo');
+
+  //force the picture div to refresh the picture
+  logoDiv.style.backgroundImage = `url(${FILE_HOST}/firm_picture/${firmId}.jpg?v=${Date.now()})`;
 });
 
 //Change online status to 'off' when disonnected
