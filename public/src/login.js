@@ -71,7 +71,7 @@ function drawSignInForm() {
 
     storeUserData(response.data);
 
-    window.location.href = `${window.location.origin}/main.html`;
+    window.location.href = `./main.html`;
   });
 
   container.appendChild(signInDiv);

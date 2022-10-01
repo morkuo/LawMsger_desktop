@@ -1,8 +1,19 @@
-import { setMsg, addClass, getJwtToken, setMessage, fetchGet } from './helper.js';
+import {
+  setMsg,
+  addClass,
+  getJwtToken,
+  setMessage,
+  fetchGet,
+  checkSpecialCharacter,
+  HOST,
+} from './helper.js';
 import { socket } from './socket.js';
 import { addChatListenerToContactDivs, addGroupChatListenerToGroupDivs } from './chat.js';
+import { groupTour } from './tour.js';
 
 async function drawSidebar() {
+  drawFirmPicture();
+
   const contacts = await getContacts();
 
   const allContactsDiv = document.querySelector(`#all .contacts`);
@@ -31,7 +42,12 @@ async function drawSidebar() {
 
   collapseSidebar();
 
+  //join groups channel that current user belongs to
   socket.emit('join', groups);
+
+  //join firm public channel
+  const firmId = localStorage.getItem('oid');
+  socket.emit('joinFirm', firmId);
 
   listenToChatWindow();
 
@@ -47,6 +63,8 @@ async function drawSidebar() {
 }
 
 async function drawAddStarButton(contacts, starContacts) {
+  if (!contacts) return;
+
   const contactIds = contacts.map(contact => contact.id);
   const starIds = starContacts.reduce((acc, star) => {
     acc[star.id] = 1;
@@ -58,12 +76,13 @@ async function drawAddStarButton(contacts, starContacts) {
     if (starIds[contactId]) return;
 
     const contactDiv = document.querySelector(`.contact[data-id="${contactId}"]`);
-    const addStarButton = document.createElement('div');
+    const addStarButton = document.createElement('span');
 
     addStarButton.setAttribute('class', 'contact-add-star-button');
+    addStarButton.classList.add('material-symbols-outlined');
     contactDiv.appendChild(addStarButton);
 
-    addStarButton.innerText = '+';
+    addStarButton.innerText = 'star';
 
     addStarButton.addEventListener('click', e => {
       socket.emit('createStarContact', contactId);
@@ -77,12 +96,13 @@ async function drawDeleteStarButton(starContacts) {
 
   starIds.forEach(starId => {
     const contactDiv = document.querySelector(`#star .contact[data-id="${starId}"]`);
-    const deleteStarButton = document.createElement('div');
+    const deleteStarButton = document.createElement('span');
 
     deleteStarButton.setAttribute('class', 'contact-delete-star-button');
+    deleteStarButton.classList.add('material-symbols-outlined');
     contactDiv.appendChild(deleteStarButton);
 
-    deleteStarButton.innerText = '-';
+    deleteStarButton.innerText = 'delete';
 
     deleteStarButton.addEventListener('click', e => {
       socket.emit('deleteStarContact', starId);
@@ -96,22 +116,21 @@ async function drawDeleteGroupButton(groups) {
 
   groupIds.forEach(groupId => {
     const groupDiv = document.querySelector(`.group[data-socket-id="${groupId}"]`);
-    const groupNameDiv = groupDiv.querySelector('.group-name');
-    const deleteStarButton = document.createElement('div');
+    const deleteStarButton = document.createElement('span');
 
     deleteStarButton.setAttribute('class', 'group-delete-button');
+    deleteStarButton.classList.add('material-symbols-outlined');
     groupDiv.appendChild(deleteStarButton);
 
-    deleteStarButton.innerText = '-';
+    deleteStarButton.innerText = 'delete';
 
     deleteStarButton.addEventListener('click', async e => {
       let authorization = getJwtToken();
 
-      // eslint-disable-next-line no-undef
-      const api = `${envVar.host}/api/1.0/group/leave`;
+      const api = `${HOST}/1.0/group/leave`;
 
       const payload = {
-        groupName: groupNameDiv.innerText,
+        groupName: groupDiv.dataset.name,
       };
 
       const res = await fetch(api, {
@@ -127,8 +146,14 @@ async function drawDeleteGroupButton(groups) {
 
       if (response.error) return setMsg(response.error, 'error');
 
+      //remove current user's group div
       groupDiv.remove();
 
+      //remove group member's group div
+      const userId = localStorage.getItem('id');
+      if (groupDiv.dataset.hostId === userId) socket.emit('deleteGroupDiv', null, groupId);
+
+      //if current user is at group chat window, redirect to welcome page
       const messages = document.getElementById('messages');
       if (!messages || messages.dataset.socketId !== groupId) return;
 
@@ -163,6 +188,8 @@ async function getGroups() {
 function drawContactDivs(contacts, category) {
   const contactsDiv = document.querySelector(`#${category} .contacts`);
 
+  if (!contacts) return;
+
   for (let contact of contacts) {
     const contactDiv = document.createElement('div');
     const pictureDiv = document.createElement('div');
@@ -178,11 +205,14 @@ function drawContactDivs(contacts, category) {
     addClass('contact-info', infoDiv);
     addClass('contact-unread-count', unreadCountDiv);
 
-    //if picture not url, then show initial
-    if (contact.picture.length <= 1) pictureDiv.innerText = contact.name[0].toUpperCase();
+    //get picture from s3
+    pictureDiv.style.backgroundImage = `url(${window.location.origin}/profile_picture/${contact.id}.jpg)`;
     nameDiv.innerText = contact.name;
-    // emailDiv.innerText = contact.email;
-    if (contact.unread) unreadCountDiv.innerText = contact.unread;
+
+    if (contact.unread) {
+      unreadCountDiv.innerText = contact.unread;
+      unreadCountDiv.classList.add('on');
+    }
 
     contactDiv.setAttribute('data-id', contact.id);
     if (contact.socket_id === undefined || null) contact.socket_id = '';
@@ -207,22 +237,34 @@ function drawGroups(groups) {
 
   for (let group of groups) {
     const groupDiv = document.createElement('div');
+    const pictureDiv = document.createElement('div');
     const statusDiv = document.createElement('div');
     const nameDiv = document.createElement('div');
     const unreadCountDiv = document.createElement('div');
 
     addClass('group', groupDiv);
+    addClass('group-picture', pictureDiv);
     addClass('group-status', statusDiv);
     addClass('group-name', nameDiv);
     addClass('group-unread-count', unreadCountDiv);
 
-    nameDiv.innerText = group.name;
-    if (group.unread) unreadCountDiv.innerText = group.unread;
+    if (group.name > 15) nameDiv.innerText = group.name.slice(0, 15) + '...';
+    else nameDiv.innerText = group.name;
+
+    groupDiv.setAttribute('title', 'Name: ' + group.name);
+
+    if (group.unread) {
+      unreadCountDiv.innerText = group.unread;
+      unreadCountDiv.classList.add('on');
+    }
 
     groupDiv.setAttribute('data-socket-id', group.id);
+    groupDiv.setAttribute('data-name', group.name);
+    groupDiv.setAttribute('data-host-id', group.host);
 
     groupsDiv.appendChild(groupDiv);
     groupDiv.appendChild(statusDiv);
+    groupDiv.appendChild(pictureDiv);
     groupDiv.appendChild(nameDiv);
     groupDiv.appendChild(unreadCountDiv);
   }
@@ -232,8 +274,9 @@ async function setParticipantsInfoToGroup(groups) {
   let authorization = getJwtToken();
 
   for (let group of groups) {
-    // eslint-disable-next-line no-undef
-    const api = `${envVar.host}/api/1.0/group/participants?groupName=${group.name}`;
+    console.log('Group Name: ' + group.name);
+
+    const api = `${HOST}/1.0/group/participants?groupName=${group.name}`;
 
     const res = await fetch(api, {
       method: 'GET',
@@ -257,21 +300,35 @@ async function setParticipantsInfoToGroup(groups) {
     const lastLineBreak = titleAttribute.lastIndexOf('\n');
     titleAttribute = titleAttribute.slice(0, lastLineBreak);
 
-    groupDiv.setAttribute('title', titleAttribute);
+    const currentTitleAttributeValue = groupDiv.getAttribute('title');
+
+    console.log('currentTitle: ' + currentTitleAttributeValue);
+    groupDiv.setAttribute('title', `${currentTitleAttributeValue}\n${titleAttribute}`);
   }
 }
 
 function groupAddParticipantsButton() {
   const groupAddParticipants = document.getElementById('groupAddParticipants');
 
-  groupAddParticipants.addEventListener('click', () => {
-    drawCreateGroupForm();
+  groupAddParticipants.addEventListener('click', e => {
+    drawCreateGroupForm(e);
     drawAddAndDeleteParticipantsForm();
     addEmailInputLitener();
+
+    //introduction for group page
+    groupTour();
   });
 }
 
-function drawCreateGroupForm() {
+function drawCreateGroupForm(e) {
+  //highlight profile button
+  const footerOptions = document.querySelector('.footer-options');
+  for (let option of footerOptions.children) {
+    option.classList.remove('on');
+  }
+
+  e.target.classList.add('on');
+
   const pane = document.querySelector('#pane');
   const manageDiv = document.createElement('div');
   const formDiv = document.createElement('div');
@@ -297,11 +354,14 @@ function drawCreateGroupForm() {
 
   addClass('group-function', infoDiv, header, createForm, namePTag, nameInput, button);
 
-  // eslint-disable-next-line no-undef
-  const api = `${envVar.host}/api/1.0/group`;
+  const api = `${HOST}/1.0/group`;
 
   button.addEventListener('click', async e => {
     e.preventDefault();
+
+    const isNormalCharacter = checkSpecialCharacter(nameInput.value);
+
+    if (!isNormalCharacter) return setMsg(`no < > & ' " / in group name`, 'error');
 
     const payload = {
       name: nameInput.value,
@@ -322,10 +382,13 @@ function drawCreateGroupForm() {
 
     if (response.error) return setMsg(response.error, 'error');
 
+    const userId = localStorage.getItem('id');
+
     const newGroup = [
       {
         id: response.group.id,
         name: nameInput.value,
+        host: userId,
         unread: 0,
       },
     ];
@@ -407,8 +470,7 @@ function drawAddAndDeleteParticipantsForm() {
     deleteButton
   );
 
-  // eslint-disable-next-line no-undef
-  const api = `${envVar.host}/api/1.0/group`;
+  const api = `${HOST}/1.0/group`;
 
   addButton.addEventListener('click', async e => {
     e.preventDefault();
@@ -546,23 +608,29 @@ function listenToChatWindow() {
   const observer = new MutationObserver(function (mutations) {
     const sideBar = document.getElementById('sidebar');
     const allContactDivs = document.querySelectorAll('.contact');
+    const allGroupDivs = document.querySelectorAll('.group');
+    const footerOptions = document.querySelectorAll('.footer-options span');
 
     allContactDivs.forEach(contactDiv => {
-      contactDiv.style.backgroundColor = '';
+      contactDiv.classList.remove('on');
     });
 
-    const allGroupDivs = document.querySelectorAll('.group');
     allGroupDivs.forEach(groupDiv => {
-      groupDiv.style.backgroundColor = '';
+      groupDiv.classList.remove('on');
     });
 
     const messages = document.getElementById('messages');
     if (!messages) return;
 
+    //remove highlight from footer button
+    footerOptions.forEach(button => {
+      button.classList.remove('on');
+    });
+
     //group
     if (messages.dataset.id === 'undefined') {
       const groupDiv = sideBar.querySelector(`[data-socket-id="${messages.dataset.socketId}"]`);
-      groupDiv.style.backgroundColor = 'skyblue';
+      groupDiv.classList.add('on');
 
       return;
     }
@@ -572,7 +640,7 @@ function listenToChatWindow() {
     const currentContactDivs = sideBar.querySelectorAll(`[data-id="${contactUserId}"]`);
 
     currentContactDivs.forEach(div => {
-      div.style.backgroundColor = 'skyblue';
+      div.classList.add('on');
     });
   });
 
@@ -583,12 +651,6 @@ function listenToChatWindow() {
 }
 
 function collapseSidebar() {
-  const contents = document.querySelectorAll('.content');
-
-  for (let content of contents) {
-    content.setAttribute('style', 'height:0');
-  }
-
   const headers = document.querySelectorAll('.header');
 
   for (let header of headers) {
@@ -604,7 +666,7 @@ function collapseSidebar() {
 
       //get current block root
       let headerParent = e.target;
-      while (!headerParent.classList.contains('collapse')) {
+      while (!headerParent.classList.contains('collapse-header')) {
         headerParent = headerParent.parentElement;
       }
 
@@ -628,8 +690,14 @@ function signOutButton() {
 
   signOutButton.addEventListener('click', () => {
     localStorage.removeItem('token');
-    window.location.href = `./index.html`;
+    window.location.href = `${window.location.origin}/index.html`;
   });
+}
+
+function drawFirmPicture() {
+  const logoDiv = document.getElementById('firmLogo');
+  const organizationId = localStorage.getItem('oid');
+  logoDiv.style.backgroundImage = `url(${window.location.origin}/firm_picture/${organizationId}.jpg)`;
 }
 
 export { drawContactDivs, drawSidebar, drawGroups, drawDeleteGroupButton };
