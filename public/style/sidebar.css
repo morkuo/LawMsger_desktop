@@ -1,11 +1,8 @@
-:root {
-  --sidebar-options-background-color: white;
-}
-
 #sidebar {
   background-color: var(--background-color);
   display: flex;
   flex-direction: column;
+  width: 23%;
   min-width: 23%;
   max-height: 100%;
 }
@@ -34,41 +31,69 @@
 
 #navbar {
   display: flex;
-  margin: 1.5rem 0;
-  justify-content: space-between;
+  margin: 1rem 0 0.5rem 0;
+  justify-content: flex-start;
   color: white;
 }
 
-#navbar .options a {
-  color: white;
+#firmLogo {
+  height: 60px;
+  width: 60px;
+  margin-left: 0.8rem;
+  border-radius: var(--border-radius);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 #all {
-  background-color: rgb(21, 21, 22);
+  background-color: var(--background-color);
+}
+
+.content {
+  height: 0;
 }
 
 .contact,
 .group {
   display: flex;
   margin: 0.7rem 1rem;
-  height: 1.5rem;
+  height: 3rem;
+  position: relative;
   border-radius: var(--border-radius);
   cursor: pointer;
-  background-color: var(--sidebar-options-background-color);
+  color: white;
+  background-color: var(--options-background-color);
   direction: ltr;
 }
 
 .contact:hover,
 .group:hover {
-  background-color: rgb(231, 225, 225);
+  background-color: #1f4560;
+  transition: all 0.1s;
 }
 
-.contact-picture {
-  margin-right: 1rem;
+.contact.on,
+.group.on {
+  background-color: #1f4560;
+}
+
+.contact-picture,
+.group-picture {
+  margin: 0.3rem 1rem 0.3rem 0.6rem;
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 15%;
+  width: 2.4rem;
+  min-width: 2.4rem;
+  border-radius: var(--border-radius);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.group-picture {
+  background-image: url(/images/group_pfp.jpg);
 }
 
 .contact-info,
@@ -78,19 +103,41 @@
   justify-content: center;
 }
 
+.contact-unread-count,
+.group-unread-count {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  bottom: 3px;
+  left: 3.2rem;
+  color: white;
+  height: 23px;
+  width: 23px;
+  border-radius: 50%;
+  font-size: 0.9rem;
+}
+
+.contact-unread-count.on,
+.group-unread-count.on {
+  background-color: #b63f3f;
+}
+
 .group-name,
 .contact-info {
   flex-grow: 1;
   font-size: 1.1rem;
+  max-width: 60%;
 }
 
-.group-delete-button,
-.contact-add-star-button,
-.contact-delete-star-button {
-  display: flex;
+span.group-delete-button,
+span.contact-add-star-button,
+span.contact-delete-star-button {
+  display: inline-flex;
   justify-content: center;
   align-items: center;
-  min-width: 10%;
+  margin: 0 0.3rem;
+  min-width: 13%;
   border-top-right-radius: var(--border-radius);
   border-bottom-right-radius: var(--border-radius);
 }
@@ -98,16 +145,20 @@
 .group-delete-button:hover,
 .contact-add-star-button:hover,
 .contact-delete-star-button:hover {
-  background-color: orange;
+  color: rgb(226, 162, 43);
+  font-variation-settings: 'FILL' 1, 'wght' 700, 'opsz' 26;
+  transition: 0.8s;
 }
 
 .contact-status {
-  width: 0.75rem;
+  width: 1rem;
+  min-width: 1rem;
   background-color: grey;
 }
 
 .contact-status.on {
-  background-color: rgb(145, 189, 157);
+  background-color: rgb(68, 164, 114);
+  transition: all 1s;
 }
 
 .collapse-symbol {
@@ -125,7 +176,7 @@
 
 .content {
   overflow-y: auto;
-  transition: height 0.3s ease;
+  transition: height 0.4s ease;
 
   scrollbar-color: var(--options-background-color) var(--options-hover-color);
   scrollbar-width: thin;
@@ -164,6 +215,10 @@
   background-color: rgb(126, 126, 138);
 }
 
+.footer-options span.on {
+  background-color: rgb(126, 126, 138);
+}
+
 /* toggle symbol animation */
 
 .collapse-symbol {
@@ -180,7 +235,7 @@
   width: 12px;
   height: 2px;
   background-color: #000;
-  transition: transform 0.2s ease;
+  transition: transform 0.3s ease;
 }
 
 .collapse-symbol span:last-child {
@@ -198,4 +253,21 @@
 
 #signOut {
   color: white;
+}
+
+#optionDiv {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  margin: 4rem 2rem;
+  padding: 2rem 4rem;
+  border: 1px solid #6d665b;
+  height: 70vh;
+
+  justify-content: space-evenly;
+}
+
+#optionDiv button {
+  padding: 0.5rem 1rem;
 }

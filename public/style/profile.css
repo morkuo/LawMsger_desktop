@@ -1,49 +1,143 @@
-div.profile {
+#profileContainer {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-
-  margin: 4rem 2rem;
+  justify-content: space-around;
+  align-items: center;
   padding: 2rem 4rem;
+  height: 100%;
+  width: 45%;
+  border-radius: var(--border-radius);
+}
+
+#profileContainer p {
+  margin: 0.7rem;
+}
+
+#profileContainer button {
+  background-color: var(--background-color);
+}
+
+#profileContainer button:hover {
+  background-color: var(--options-hover-color-blue);
+}
+
+#profileContainer button.on {
+  background-color: var(--options-hover-color-blue);
+}
+
+#profileDiv {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: auto 4rem;
+  height: 85vh;
+  min-width: 65vw;
   border: 1px solid #6d665b;
-  height: 70vh;
+  border-radius: var(--border-radius);
+}
+
+#profilePictureDiv,
+#profilePicturePreviewDiv {
+  height: 250px;
+  width: 250px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+#profilePicturePreviewDiv {
+  border: 2px solid var(--dark-yellow);
 }
 
 h3.profile {
-  margin-bottom: 2rem;
+  margin: 1rem 0;
+  font-size: 2rem;
 }
 
-input.profile,
-button.profile {
-  background-color: #2b2a33;
+input.profile {
+  background-color: var(--options-background-color);
   color: white;
-  border: 1px solid grey;
-  border-radius: 3px;
+  border: none;
+  border-radius: var(--border-radius);
   padding: 0.1rem 0.2rem;
 
   max-width: 15vw;
 }
 
-button.profile {
-  margin-top: 4rem;
-  padding: 1rem 1.5rem;
-  cursor: pointer;
-}
-
-#changePasswordDiv {
-  position: absolute;
-  padding: 6.5rem 4.5rem;
-  right: 10%;
-  top: 15%;
-  background-color: white;
-  border: 1px solid black;
-}
-
-#optionDiv {
+#changePasswordDiv,
+#changeProfilePictureDiv {
   display: flex;
-  justify-content: space-evenly;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  flex-grow: 1;
+  padding: 2rem 4rem;
+  height: 100%;
+  color: white;
+  background-color: var(--background-color);
+  border-radius: var(--border-radius);
+  font-family: ChiKareGo2;
 }
 
-#optionDiv button {
+#changePasswordDiv p,
+#changeProfilePictureDiv p {
+  font-size: 1.3rem;
+}
+
+.editDiv {
+  display: flex;
+  flex-direction: column;
+}
+
+.editDiv button {
+  margin-top: 2rem;
   padding: 0.5rem 1rem;
+  cursor: pointer;
+  background-color: var(--options-background-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+
+  width: 15vw;
+}
+
+.editDiv button:hover {
+  color: white;
+  background-color: var(--options-hover-color-blue);
+  transition: all 0.1s;
+}
+
+#pictureInputWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#changeProfilePictureDiv .editDiv {
+  flex-direction: row;
+  justify-content: center;
+}
+
+#pictureInputIcon,
+#pictureInputComfirm {
+  color: white;
+  font-size: 40px;
+  margin: 0.4rem 1.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  /* font-variation-settings: 'FILL' 1, 'wght' 700, 'opsz' 48; */
+}
+
+#pictureInputIcon:hover,
+#pictureInputComfirm:hover {
+  background-color: var(--options-hover-color-blue);
+  transition: all 0.1s;
+}
+
+#pictureInput {
+  position: absolute;
+  visibility: hidden;
 }
