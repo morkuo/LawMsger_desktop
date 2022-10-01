@@ -20,15 +20,19 @@ h3 {
 
 input {
   margin: 1rem 0;
+  padding: 0.1rem 0.2rem;
+  border: none;
+  border-radius: 5px;
   font-family: ChiKareGo2;
 }
 
-button {
-  font-family: ChiKareGo2;
+input:focus {
+  outline: none;
 }
 
 .container {
   display: flex;
+  justify-content: center;
   flex-direction: column;
   height: 100%;
 }
@@ -40,12 +44,28 @@ button {
   min-height: 700px;
 }
 
+#organizationNameInput {
+  background-color: #cbba9e;
+}
+
 div.auth {
   display: flex;
   justify-content: center;
-  margin: auto 4rem;
+  margin: auto 2rem;
   border: 1px solid #6d665b;
   max-height: 68vh;
+}
+
+#signInIcon {
+  font-size: 45px;
+  margin-top: 0.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+#signInIcon:hover {
+  transform: rotate(360deg);
+  transition: all 1s ease;
 }
 
 form.auth {
@@ -73,21 +93,15 @@ h3.auth {
   margin-bottom: 2rem;
 }
 
-input.auth,
-button.auth {
+input.auth {
   background-color: #2b2a33;
   color: white;
-  border: 1px solid grey;
-  border-radius: 3px;
-  padding: 0.1rem 0.2rem;
-  max-width: 15vw;
+  border: none;
 }
 
 button.auth {
-  margin-top: 2rem;
-  padding: 0.22rem 0.7rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
+  background-color: transparent;
+  border: none;
 }
 
 div.signout {

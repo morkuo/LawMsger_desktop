@@ -1,3 +1,6 @@
+const HOST = 'https://api.mortonkuo.solutions';
+// const HOST = 'http://localhost:3000';
+
 function setMsg(messages, error = false, autoRemove = true, appendTo = '#main') {
   const container = document.querySelector(appendTo);
 
@@ -35,33 +38,40 @@ function addClass(className, ...tags) {
   }
 }
 
-function storeToken(token) {
-  localStorage.setItem('token', token);
-}
+function storeUserData(userdata) {
+  const {
+    access_token,
+    user: { id, role, name, email, organizationId },
+  } = userdata;
 
-function storeUserId(userId) {
-  localStorage.setItem('id', userId);
-}
-
-function storeUsername(username) {
-  localStorage.setItem('name', username);
-}
-
-function storeUserEmail(userEmail) {
-  localStorage.setItem('email', userEmail);
+  localStorage.setItem('token', access_token);
+  localStorage.setItem('id', id);
+  localStorage.setItem('role', role);
+  localStorage.setItem('name', name);
+  localStorage.setItem('email', email);
+  localStorage.setItem('oid', organizationId);
 }
 
 function getJwtToken() {
   let authorization = 'Bearer ';
   let tokenJson = localStorage.getItem('token');
-  if (!tokenJson) return (window.location.href = `./index.html`);
+  if (!tokenJson) return (window.location.href = `${window.location.origin}/index.html`);
 
   authorization += tokenJson;
 
   return authorization;
 }
 
-async function setMessage(msg, time, senderSocketId, more, filesInfo, isRead, senderName) {
+async function setMessage(
+  msg,
+  time,
+  senderSocketId,
+  more,
+  filesInfo,
+  isRead,
+  senderName,
+  senderUserId
+) {
   const messages = document.getElementById('messages');
 
   if (!messages) return;
@@ -80,10 +90,10 @@ async function setMessage(msg, time, senderSocketId, more, filesInfo, isRead, se
   const relativeTime = changeTimeFormat(time);
   timeDiv.innerText = relativeTime;
 
-  senderDiv.innerText = senderName[0].toUpperCase();
   messageName.innerText = senderName;
   senderDiv.setAttribute('class', 'chat-sender-picture');
   messageDiv.setAttribute('class', 'chat-message-text');
+  filesDiv.setAttribute('class', 'chat-message-files');
   timeDiv.setAttribute('class', 'chat-message-time');
   timeDiv.setAttribute('data-raw-time', time);
 
@@ -124,7 +134,13 @@ async function setMessage(msg, time, senderSocketId, more, filesInfo, isRead, se
           file.setAttribute('href', `${url}`);
           file.setAttribute('target', `_blank`);
           file.setAttribute('download', `testname`);
-          file.innerText = originalName;
+
+          if (originalName.length > 20) {
+            const extensionIndex = originalName.lastIndexOf('.');
+            file.innerText =
+              originalName.slice(0, 20) + '...' + originalName.slice(extensionIndex - 3);
+          } else file.innerText = originalName;
+
           filesDiv.appendChild(file);
         }
       }
@@ -139,18 +155,21 @@ async function setMessage(msg, time, senderSocketId, more, filesInfo, isRead, se
   } else messages.insertAdjacentElement('afterbegin', item);
 
   if (!senderSocketId) {
+    //get signed in user's picture
+    const userId = localStorage.getItem('id');
+    senderDiv.style.backgroundImage = `url(${window.location.origin}/profile_picture/${userId}.jpg)`;
+
     if (!more) messages.scrollTo(0, messages.scrollHeight);
     return;
   }
 
-  senderDiv.innerText = senderName[0].toUpperCase();
+  senderDiv.style.backgroundImage = `url(${window.location.origin}/profile_picture/${senderUserId}.jpg)`;
   if (!more) messages.scrollTo(0, messages.scrollHeight);
   return;
 }
 
 async function fetchGet(apiPath) {
-  // eslint-disable-next-line no-undef
-  const apiUrl = `${envVar.host}/api/1.0${apiPath}`;
+  const apiUrl = `${HOST}/1.0${apiPath}`;
 
   let authorization = getJwtToken();
 
@@ -206,18 +225,36 @@ function changeTimeFormat(target) {
 }
 
 function isImage(url) {
-  return /\.(jpg|jpeg|png|gif|svg)$/.test(url);
+  return /\.(jpg|jpeg|png|gif)$/.test(url);
+}
+
+function checkSpecialCharacter(str) {
+  const targets = ['<', '>', '&', "'", '"', '/'];
+  for (let target of targets) {
+    if (str.indexOf(target) > -1) return false;
+  }
+
+  return true;
+}
+
+function loadingEffect() {
+  const pane = document.getElementById('pane');
+  const loading = document.createElement('div');
+  loading.setAttribute('id', 'loadingEffect');
+  pane.appendChild(loading);
+
+  return loading;
 }
 
 export {
   setMsg,
   addClass,
-  storeToken,
-  storeUserId,
-  storeUsername,
-  storeUserEmail,
+  storeUserData,
   getJwtToken,
   setMessage,
   fetchGet,
   isImage,
+  checkSpecialCharacter,
+  loadingEffect,
+  HOST,
 };

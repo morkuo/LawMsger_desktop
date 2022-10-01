@@ -9,11 +9,14 @@
 }
 
 :root {
-  --background-color: rgb(21, 21, 22);
+  --background-color: rgb(22, 24, 28);
   --options-background-color: rgb(80, 80, 93);
   --options-hover-color: rgb(126, 126, 138);
+  --options-hover-color-blue: #1f4560;
+  --light-yellow: #cbba9e;
+  --dark-yellow: #917b58;
   --scrollbar-background-color: rgb(46, 46, 55);
-  --success-background-color: rgb(145, 189, 157);
+  --success-background-color: rgb(68, 164, 114);
   --error-background-color: pink;
   --border-radius: 10px;
 }
@@ -46,7 +49,7 @@
 * {
   margin: 0;
   box-sizing: border-box;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 body {
@@ -113,9 +116,10 @@ p {
 
 #suggestions {
   position: absolute;
-  bottom: 2rem;
+  bottom: 2.45rem;
   padding: 1rem;
   max-width: 100%;
+  /* min-width: 1060px; */
   border-top-left-radius: 1rem;
   border-top-right-radius: 1rem;
   background-color: var(--background-color);
@@ -123,16 +127,41 @@ p {
   cursor: pointer;
   visibility: hidden;
   z-index: 1;
+  transition: bottom 0.2s ease;
 }
 
 #suggestions.on {
   visibility: visible;
 }
 
+#suggestions table {
+  border-collapse: collapse;
+}
+
 #suggestions td,
 #suggestions li {
   padding: 0 0.4rem;
   font-size: 1rem;
+}
+
+#suggestions td:first-child {
+  border-top-left-radius: var(--border-radius);
+  border-bottom-left-radius: var(--border-radius);
+}
+
+#suggestions td:last-child {
+  border-top-right-radius: var(--border-radius);
+  border-bottom-right-radius: var(--border-radius);
+}
+
+#suggestions li:hover,
+#suggestions tr:hover {
+  background-color: var(--options-hover-color-blue);
+}
+
+#suggestions li.on,
+#suggestions tr.on {
+  background-color: var(--options-hover-color-blue);
 }
 
 #main {
@@ -146,7 +175,7 @@ p {
 
 #main::after {
   content: '';
-  background: url(../images/main.jpeg);
+  background: url(/images/main.jpeg);
   background-size: 42rem;
   background-repeat: no-repeat;
   background-position: center;
@@ -163,7 +192,9 @@ p {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  align-items: center;
   height: 90vh;
+  min-width: 1060px;
   flex-grow: 1;
 }
 
@@ -190,10 +221,12 @@ p {
 #inputWrapper {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   width: 95%;
+  min-width: 1060px;
   min-height: 2.35rem;
-  position: relative;
+  position: absolute;
+  bottom: 22%;
   color: white;
   border-radius: var(--border-radius);
   background-color: var(--background-color);
@@ -207,6 +240,7 @@ p {
 #inputWrapper button {
   display: flex;
   align-items: center;
+  margin: 0.35rem 0 0 0;
   border: none;
   color: white;
   border-radius: var(--border-radius);
@@ -215,14 +249,37 @@ p {
 
 #input {
   border: none;
+  margin: 0.6rem;
   padding: 0 1rem;
   width: 93%;
-  height: 100%;
-  margin: 0.25rem;
+  height: 28px;
+  min-height: 28px;
+  max-height: 30vh;
+  overflow-y: auto;
+
+  scrollbar-color: var(--options-background-color) var(--options-hover-color);
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+
   color: white;
   border-radius: var(--border-radius);
   background-color: var(--background-color);
+  resize: none;
+  font-family: ChiKareGo2;
 }
+
+#input::-webkit-scrollbar {
+  width: 0.8rem;
+}
+
+#input::-webkit-scrollbar-track {
+  background: var(--scrollbar-background-color);
+}
+
+#input::-webkit-scrollbar-thumb {
+  background-color: var(--background-color);
+}
+
 #input:focus {
   outline: none;
 }
@@ -243,8 +300,8 @@ p {
   margin: 0;
   padding: 0;
   height: 90vh;
+  width: 100%;
   overflow-y: auto;
-
   scrollbar-width: thin;
   scrollbar-gutter: stable;
 }
@@ -291,6 +348,8 @@ chat-unread-message #messages > li div {
 }
 
 #userInfo {
+  display: flex;
+  align-items: center;
   margin: 0 1rem;
   cursor: default;
 }
@@ -312,4 +371,25 @@ chat-unread-message #messages > li div {
   justify-content: center;
   align-items: center;
   padding: 5rem;
+}
+
+#loadingEffect {
+  width: 3rem;
+  height: 3rem;
+  border: 5px solid #f3f3f3;
+  border-top: 6px solid var(--options-hover-color-blue);
+  border-radius: 100%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

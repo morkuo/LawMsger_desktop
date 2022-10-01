@@ -1,26 +1,38 @@
-import { addClass, storeToken, storeUserId, storeUsername, storeUserEmail } from './helper.js';
+import { addClass, storeUserData, HOST } from './helper.js';
 
-setSignInField();
+drawSignInForm();
 
-function setSignInField() {
+function drawSignInForm() {
   const container = document.querySelector('.container');
   const signInDiv = container.querySelector('div');
   const header = document.createElement('h3');
   const form = document.createElement('form');
+  const organizationNamePTag = document.createElement('p');
   const emailPTag = document.createElement('p');
   const passwordPtag = document.createElement('p');
+  const organizationNameInput = document.createElement('input');
   const emailInput = document.createElement('input');
   const passwordInput = document.createElement('input');
   const button = document.createElement('button');
+  const buttonIcon = document.createElement('span');
 
   header.innerText = 'Sign In';
+  organizationNamePTag.innerText = 'Firm';
   emailPTag.innerText = 'Email';
   passwordPtag.innerText = 'Password';
-  button.innerText = 'Submit';
+  buttonIcon.innerText = 'arrow_forward';
 
   form.setAttribute('id', 'signIn');
 
   passwordInput.setAttribute('type', 'password');
+  buttonIcon.setAttribute('id', 'signInIcon');
+  buttonIcon.setAttribute('class', 'material-symbols-outlined');
+  organizationNameInput.setAttribute('id', 'organizationNameInput');
+
+  //default account for testing convenience
+  organizationNameInput.value = 'kuoandhsu';
+  emailInput.value = 'morton@kh.com';
+  passwordInput.value = '1234';
 
   addClass(
     'auth',
@@ -34,13 +46,13 @@ function setSignInField() {
     button
   );
 
-  // eslint-disable-next-line no-undef
-  const signInApi = `${envVar.host}/api/1.0/user/signin`;
+  const signInApi = `${HOST}/1.0/user/signin`;
 
   button.addEventListener('click', async e => {
     e.preventDefault();
 
     const payload = {
+      organizationName: organizationNameInput.value,
       email: emailInput.value,
       password: passwordInput.value,
     };
@@ -57,22 +69,22 @@ function setSignInField() {
 
     if (response.error) return setSystemMessage(response.error, 'error');
 
-    storeToken(response.data.access_token);
-    storeUserId(response.data.user.id);
-    storeUsername(response.data.user.name);
-    storeUserEmail(response.data.user.email);
+    storeUserData(response.data);
 
-    window.location.href = `./main.html`;
+    window.location.href = `${window.location.origin}/main.html`;
   });
 
   container.appendChild(signInDiv);
   signInDiv.appendChild(form);
   form.appendChild(header);
+  form.appendChild(organizationNamePTag);
+  form.appendChild(organizationNameInput);
   form.appendChild(emailPTag);
   form.appendChild(emailInput);
   form.appendChild(passwordPtag);
   form.appendChild(passwordInput);
   form.appendChild(button);
+  button.appendChild(buttonIcon);
 }
 
 function setSystemMessage(messages, type, autoRemove = true) {
