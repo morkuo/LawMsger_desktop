@@ -471,7 +471,7 @@ function drawAddAndDeleteParticipantsForm() {
     deleteButton
   );
 
-  const api = `${HOST}/1.0/group`;
+  const api = `${HOST}/1.0/group/participants`;
 
   addButton.addEventListener('click', async e => {
     e.preventDefault();
@@ -532,8 +532,6 @@ function drawAddAndDeleteParticipantsForm() {
     };
 
     let authorization = getJwtToken();
-
-    const api = `${HOST}/1.0/group/participants`;
 
     const res = await fetch(api, {
       method: 'DELETE',
