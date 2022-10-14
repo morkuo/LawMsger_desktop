@@ -4,10 +4,7 @@ const { app, BrowserWindow, Tray, nativeImage, ipcMain } = require('electron');
 
 function createWindow() {
   const win = new BrowserWindow({
-    webPreferences: {
-      preload: join(__dirname, 'preload.js'),
-    },
-    // autoHideMenuBar: true,
+    autoHideMenuBar: true,
   });
 
   win.loadFile(join(__dirname, 'public/index.html'));
