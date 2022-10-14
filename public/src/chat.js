@@ -1,4 +1,12 @@
-import { setMsg, addClass, getJwtToken, setMessage, fetchGet, isImage, HOST } from './helper.js';
+import {
+  setMsg,
+  getJwtToken,
+  setMessage,
+  scrollToBottom,
+  fetchGet,
+  isImage,
+  HOST,
+} from './helper.js';
 import { socket } from './socket.js';
 import { searchTour } from './tour.js';
 
@@ -46,35 +54,63 @@ async function chatListener(e) {
   drawChatWindow(targetContact.dataset.id, targetContact.dataset.socketId);
 
   //append history message to chat window
-  const { data: history } = await getMessages(targetContact.dataset.id);
+  const { data: msgs } = await getMessages(targetContact.dataset.id);
 
-  for (let i = history.length - 1; i >= 0; i--) {
-    if (history[i].sender_id !== targetContact.dataset.id) {
-      setMessage(
-        history[i].message,
-        history[i].created_at,
-        null,
-        null,
-        history[i].files,
-        'read',
-        history[i].sender_name,
-        history[i].sender_id
-      );
-    } else {
-      setMessage(
-        history[i].message,
-        history[i].created_at,
-        targetContact.dataset.id,
-        null,
-        history[i].files,
-        history[i].isRead,
-        history[i].sender_name,
-        history[i].sender_id
-      );
-    }
+  for (let msg of msgs) {
+    setMessage(
+      msg.message,
+      msg.created_at,
+      msg.sender_id,
+      msg.files,
+      msg.sender_name,
+      msg.sender_id !== targetContact.dataset.id ? 'read' : msg.isRead
+    );
   }
 
-  //get more messages when scroll to top
+  scrollToBottom();
+
+  moreMessagesListener(targetContact.dataset.id);
+
+  //suggestions
+  const input = document.getElementById('input');
+  const form = document.getElementById('form');
+
+  const debouncedDetectInput = debounce(detectInput, 600);
+
+  input.addEventListener('keydown', debouncedDetectInput);
+
+  // Send message
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+
+    const messages = document.getElementById('messages');
+    const contactUserSocketId = messages.dataset.socketId;
+    const contactUserId = messages.dataset.id;
+    const contactDiv = document.querySelector(`[data-id="${contactUserId}"]`);
+
+    const contactNameDiv = contactDiv.querySelector('.contact-info div:first-child');
+    const contactName = contactNameDiv.innerText;
+
+    if (input.value || uploadfilesQueue.length) {
+      const authorization = getJwtToken();
+      const response = await uploadFile(authorization);
+
+      if (response.error) return setMsg(response.error);
+
+      const filesInfo = JSON.stringify(response);
+
+      socket.emit('msg', input.value, contactUserSocketId, contactUserId, contactName, filesInfo);
+
+      setMessage(input.value, Date.now(), userId, filesInfo, userName.innerText, 'read', 'append');
+
+      scrollToBottom();
+
+      input.value = '';
+    }
+  });
+}
+
+function moreMessagesListener(targetContactUserId) {
   const messages = document.getElementById('messages');
 
   messages.addEventListener(
@@ -98,88 +134,23 @@ async function chatListener(e) {
         let oldestMessageTimeDiv = messages.querySelector('li:first-child .chat-message-time');
         let baselineTime = oldestMessageTimeDiv.dataset.rawTime;
 
-        const { data: moreMessages } = await getMessages(targetContact.dataset.id, baselineTime);
+        const { data: moreMessages } = await getMessages(targetContactUserId, baselineTime);
 
-        if (moreMessages.length === 0) return setMsg('No More Messages');
+        if (!moreMessages.length) return setMsg('No More Messages');
 
         for (let msg of moreMessages) {
-          if (msg.sender_id !== targetContact.dataset.id) {
-            setMessage(
-              msg.message,
-              msg.created_at,
-              null,
-              'more',
-              msg.files,
-              'read',
-              msg.sender_name,
-              msg.sender_id
-            );
-          } else {
-            setMessage(
-              msg.message,
-              msg.created_at,
-              targetContact.dataset.id,
-              'more',
-              msg.files,
-              msg.isRead,
-              msg.sender_name,
-              msg.sender_id
-            );
-          }
+          setMessage(
+            msg.message,
+            msg.created_at,
+            msg.sender_id,
+            msg.files,
+            msg.sender_name,
+            msg.sender_id !== targetContactUserId ? 'read' : msg.isRead
+          );
         }
       }
     }, 600)
   );
-
-  //suggestions
-  const input = document.getElementById('input');
-  const sugesstionsList = document.getElementById('suggestions');
-  const form = document.getElementById('form');
-
-  const debouncedDetectInput = debounce(detectInput, 600);
-
-  input.addEventListener('keydown', debouncedDetectInput);
-
-  // Send message
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-
-    const messages = document.getElementById('messages');
-    const contactUserSocketId = messages.dataset.socketId;
-    const contactUserId = messages.dataset.id;
-    const contactDiv = document.querySelector(`[data-id="${contactUserId}"]`);
-
-    const contactNameDiv = contactDiv.querySelector('.contact-info div:first-child');
-    const contactName = contactNameDiv.innerText;
-
-    const uploadButton = document.querySelector('#chatUploadButton');
-
-    if (input.value || uploadfilesQueue.length !== 0) {
-      const authorization = getJwtToken();
-      const response = await uploadFile(authorization);
-
-      if (response.error) return setMsg(response.error);
-
-      const filesInfo = JSON.stringify(response);
-
-      socket.emit('msg', input.value, contactUserSocketId, contactUserId, contactName, filesInfo);
-
-      console.log(userId);
-
-      setMessage(
-        input.value,
-        Date.now(),
-        userId,
-        null,
-        filesInfo,
-        'read',
-        userName.innerText,
-        userId
-      );
-
-      input.value = '';
-    }
-  });
 }
 
 async function groupChatListener(e) {
@@ -201,40 +172,20 @@ async function groupChatListener(e) {
   drawChatWindow(targetContact.dataset.id, targetContact.dataset.socketId);
 
   const userId = localStorage.getItem('id');
-  const userName = document.querySelector('#userInfo h2');
 
   //append history message to chat window
-  const { data: history } = await getGroupMessages(targetContact.dataset.socketId);
+  const { data: msgs } = await getGroupMessages(targetContact.dataset.socketId);
 
-  for (let i = history.length - 1; i >= 0; i--) {
-    const contactDiv = document.querySelector(`.contacts [data-id="${history[i].sender_id}"]`);
+  for (let msg of msgs) {
+    const contactDiv = document.querySelector(`.contacts [data-id="${msg.sender_id}"]`);
 
     //other users
     if (contactDiv) {
       const userId = localStorage.getItem('id');
-      const isRead = history[i].isRead.includes(userId);
-
-      setMessage(
-        history[i].message,
-        history[i].created_at,
-        contactDiv.dataset.id,
-        null,
-        history[i].files,
-        isRead,
-        history[i].sender_name,
-        history[i].sender_id
-      );
+      const isRead = msg.isRead.includes(userId);
+      setMessage(msg.message, msg.created_at, msg.sender_id, msg.files, msg.sender_name, isRead);
     } else {
-      setMessage(
-        history[i].message,
-        history[i].created_at,
-        null,
-        null,
-        history[i].files,
-        'read',
-        history[i].sender_name,
-        userId
-      );
+      setMessage(msg.message, msg.created_at, msg.sender_id, msg.files, msg.sender_name, 'read');
     }
   }
 
@@ -270,37 +221,24 @@ async function groupChatListener(e) {
         if (moreMessages.length === 0) return setMsg('No More Messages');
 
         for (let msg of moreMessages) {
-          if (msg.sender_id === userId) {
-            setMessage(
-              msg.message,
-              msg.created_at,
-              null,
-              'more',
-              msg.files,
-              'read',
-              msg.sender_name,
-              userId
-            );
-          } else {
-            setMessage(
-              msg.message,
-              msg.created_at,
-              msg.sender_id,
-              'more',
-              msg.files,
-              msg.isRead,
-              msg.sender_name,
-              msg.sender_id
-            );
-          }
+          setMessage(
+            msg.message,
+            msg.created_at,
+            msg.sender_id,
+            msg.files,
+            msg.sender_name,
+            msg.sender_id === userId ? 'read' : msg.isRead,
+            'read'
+          );
         }
       }
     }, 600)
   );
 
+  scrollToBottom();
+
   //suggestions
   const input = document.getElementById('input');
-  const sugesstionsList = document.getElementById('suggestions');
   const form = document.getElementById('form');
 
   const debouncedDetectInput = debounce(detectInput, 600);
@@ -313,10 +251,6 @@ async function groupChatListener(e) {
 
     const messages = document.getElementById('messages');
     const contactUserSocketId = messages.dataset.socketId;
-    const contactUserId = messages.dataset.id;
-    const contactDiv = document.querySelector(`[data-id="${contactUserId}"]`);
-
-    const uploadButton = document.querySelector('#chatUploadButton');
 
     if (input.value || uploadfilesQueue.length !== 0) {
       const authorization = getJwtToken();
@@ -327,19 +261,6 @@ async function groupChatListener(e) {
       const filesInfo = JSON.stringify(response);
 
       socket.emit('groupmsg', input.value, contactUserSocketId, filesInfo);
-
-      console.log(userId);
-
-      setMessage(
-        input.value,
-        Date.now(),
-        userId,
-        null,
-        filesInfo,
-        'read',
-        userName.innerText,
-        userId
-      );
 
       input.value = '';
     }
@@ -488,8 +409,7 @@ async function getMessages(targetContactUserId, baselineTime) {
   if (!baselineTime) messageApiPath += `?contactUserId=${targetContactUserId}`;
   else messageApiPath += `/more?contactUserId=${targetContactUserId}&baselineTime=${baselineTime}`;
 
-  const response = await fetchGet(messageApiPath);
-  return response;
+  return await fetchGet(messageApiPath);
 }
 
 async function getGroupMessages(targetGroupId, baselineTime) {
@@ -498,8 +418,7 @@ async function getGroupMessages(targetGroupId, baselineTime) {
   if (!baselineTime) apiPath += `?groupId=${targetGroupId}`;
   else apiPath += `/more?groupId=${targetGroupId}&baselineTime=${baselineTime}`;
 
-  const response = await fetchGet(apiPath);
-  return response;
+  return await fetchGet(apiPath);
 }
 
 function debounce(func, delay) {

@@ -471,7 +471,8 @@ function drawAddAndDeleteParticipantsForm() {
     deleteButton
   );
 
-  const api = `${HOST}/1.0/group`;
+  //refactor url
+  const api = `${HOST}/1.0/group/participants`;
 
   addButton.addEventListener('click', async e => {
     e.preventDefault();
@@ -534,7 +535,7 @@ function drawAddAndDeleteParticipantsForm() {
     let authorization = getJwtToken();
 
     const res = await fetch(api, {
-      method: 'PUT',
+      method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': authorization,
