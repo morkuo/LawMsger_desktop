@@ -275,8 +275,6 @@ async function setParticipantsInfoToGroup(groups) {
   let authorization = getJwtToken();
 
   for (let group of groups) {
-    console.log('Group Name: ' + group.name);
-
     const api = `${HOST}/1.0/group/participants?groupName=${group.name}`;
 
     const res = await fetch(api, {
@@ -303,7 +301,6 @@ async function setParticipantsInfoToGroup(groups) {
 
     const currentTitleAttributeValue = groupDiv.getAttribute('title');
 
-    console.log('currentTitle: ' + currentTitleAttributeValue);
     groupDiv.setAttribute('title', `${currentTitleAttributeValue}\n${titleAttribute}`);
   }
 }
